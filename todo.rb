@@ -103,16 +103,27 @@ end
 # Add a new todo to a list
 post "/lists/:list_id/todos" do
   list_id = params[:list_id].to_i
-  list = session[:lists][list_id]
+  @list = session[:lists][list_id]
   todo = params[:todo].strip
+  @todos = @list[:todos]
+
 
   error = error_for_todo(todo)
   if error
     session[:error] = error
-    redirect "lists/#{list_id}"
+    erb :list, layout: :layout
   else
+    @list[:todos] << { name: todo, completed: false }
     session[:success] = "Todo added"
-    list[:todos] << { name: todo, completed: false }
     redirect "/lists/#{list_id}"
   end
+end
+
+# Deleteing a todo
+post "/lists/:list_id/:todo_id/delete_todo" do
+  list_id = params[:list_id].to_i
+  list = session[:lists][list_id]
+  todo_id = params[:todo_id].to_i
+  list[:todos].delete_at(todo_id)
+  redirect "lists/#{list_id}"
 end
