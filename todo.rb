@@ -3,6 +3,9 @@ require "sinatra/reloader"
 require "sinatra/content_for"
 require "tilt/erubis"
 
+require 'pry'
+
+
 configure do
   enable :sessions
   set :session_secret, 'secret'
@@ -35,6 +38,12 @@ def error_for_list_name(name)
   end
 end
 
+def error_for_todo(todo)
+  if todo.size == 0
+    "You must enter a todo"
+  end
+end
+
 
 # Create a new list
 post "/lists" do
@@ -53,6 +62,7 @@ end
 get "/lists/:id" do
   id = params[:id].to_i
   @list = session[:lists][id]
+  @todos = @list[:todos]
 
   erb :list, layout: :layout
 end
@@ -78,6 +88,31 @@ post "/lists/:id" do
   else
     @list[:name] = list_name
     session[:success] = "The list has been updated"
-    redirect "/lists/#{id}"
+    redirect "/lists"
+  end
+end
+
+# Delete a todo list
+post "/lists/:id/delete" do
+  id = params[:id].to_i
+  session[:lists].delete_at(id)
+  session[:success] = "List successfully deleted"
+  redirect "/lists"
+end
+
+# Add a new todo to a list
+post "/lists/:list_id/todos" do
+  list_id = params[:list_id].to_i
+  list = session[:lists][list_id]
+  todo = params[:todo].strip
+
+  error = error_for_todo(todo)
+  if error
+    session[:error] = error
+    redirect "lists/#{list_id}"
+  else
+    session[:success] = "Todo added"
+    list[:todos] << { name: todo, completed: false }
+    redirect "/lists/#{list_id}"
   end
 end

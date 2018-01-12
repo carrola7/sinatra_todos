@@ -7,6 +7,31 @@
   </header>
 </section>
 
+<form action="/lists/<%= params[:id] %>/todos" method="post">
+  <dl>
+    <dt>
+      <label for="todo">Enter a new todo item:</label>
+    </dt>
+    <dd>
+      <input name="todo" placeholder="Something to do" type="text" value="">
+    </dd>
+  </dl>
+  <fieldset class="actions">
+    <input type="submit" value="Add">
+  </fieldset>
+</form>
+
+<ul id="lists">
+  <% @todos.each_with_index do |todo, index| %>
+    <li>
+      <a href="#">
+        <h2><%= todo[:name] %></h2>
+        <p><%= todo[:completed] %></p>
+      </a>
+    </li>
+  <% end %>
+</ul>
+
 <% content_for :header_links do %>
   <a href="/lists">All lists</a>
 <% end %>
