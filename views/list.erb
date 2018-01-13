@@ -2,15 +2,24 @@
   <header>
     <h2><%= @list[:name] %></h2>
     <ul>
-      <li><a class="edit" href="/lists/<%= params[:id]%>/edit">Edit List</a></li>
+      <li><a class="edit" href="/lists/<%= params[:list_id]%>/edit">Edit List</a></li>
     </ul>
   </header>
 
   <ul>
     <% @todos.each_with_index do |todo, index| %>
-      <li>
+      <% if todo[:completed] %>
+        <li class="complete">
+      <% else %>
+        <li>
+      <% end %>
+        <form action="/lists/<%= params[:list_id] || @list_id %>/todos/<%= "#{index}" %>" method="post" class="check">
+          <input type="hidden" name="complete" value="<%= !todo[:completed] %>" />
+          <button type="submit">Complete</button>
+        </form>
+
         <h3><%= todo[:name]%></h3>
-        <form action="/lists/<%= params[:id] %>/<%= "#{index}" %>/delete_todo" method="post" class="delete">
+        <form action="/lists/<%= params[:list_id] || @list_id %>/todos/<%= "#{index}" %>/delete" method="post" class="delete">
           <button type="submit">Delete</button>
         </form>
       </li>
@@ -20,7 +29,7 @@
 </section>
 
 
-<form action="/lists/<%= params[:id] %>/todos" method="post">
+<form action="/lists/<%= @id || @list_id %>/todos" method="post">
   <dl>
     <dt>
       <label for="todo">Enter a new todo item:</label>
@@ -35,5 +44,5 @@
 </form>
 
 <% content_for :header_links do %>
-  <a href="/lists">All lists</a>
+  <a class="list" href="/lists">All lists</a>
 <% end %>
