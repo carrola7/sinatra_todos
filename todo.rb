@@ -3,9 +3,6 @@ require "sinatra/reloader"
 require "sinatra/content_for"
 require "tilt/erubis"
 
-require 'pry'
-
-
 configure do
   enable :sessions
   set :session_secret, 'secret'
