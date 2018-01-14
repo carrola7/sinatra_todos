@@ -1,9 +1,13 @@
 <ul id="lists">
-  <% @lists.each_with_index do |list, index| %>
+  <% sort_lists_by_completed!(@lists).each_with_index do |list, index| %>
+  <% if completed?(list) %>
+    <li class="complete">
+  <% else %>
     <li>
+  <% end %>
       <a href=<%= "/lists/#{index}" %>>
         <h2><%= list[:name] %></h2>
-        <p><%= list[:todos].size %></p>
+        <p><%= display_completed_todos(list) %></p>
       </a>
     </li>
   <% end %>

@@ -11,6 +11,41 @@ configure do
   set :session_secret, 'secret'
 end
 
+helpers do
+  def completed?(list)
+    total_todos(list) > 0 &&
+    count_completed_todos(list) == total_todos(list)
+  end
+
+  def total_todos(list)
+    list[:todos].size
+  end
+
+  def count_completed_todos(list)
+    list[:todos].select { |todo| todo[:completed]== true }.size
+  end
+
+  def display_completed_todos(list)
+    size = total_todos(list)
+    completed = count_completed_todos(list)
+    "#{completed}/#{size}"
+  end
+
+  def list_class(list)
+    "complete" if completed?(list)
+  end
+
+  def sort_lists_by_completed!(lists)
+    lists.sort_by! { |list| completed?(list) ? 1 : 0 }
+  end
+
+  def sort_todos_by_completed!(todos)
+    todos.sort_by! { |todo| todo[:completed] == true ? 1 : 0 }
+  end
+
+
+end
+
 before do
   session[:lists] ||= []
 end
@@ -139,5 +174,15 @@ post '/lists/:list_id/todos/:todo_id' do
   is_completed = params[:complete] == "true"
   list[:todos][todo_id][:completed] = is_completed
   session[:success] = "Todo status altered"
+  redirect "lists/#{list_id}"
+end
+
+post '/lists/:list_id/completed' do
+  list_id = params[:list_id].to_i
+  list = session[:lists][list_id]
+    list[:todos].each do |todo|
+      todo[:completed] = true
+    end
+  session[:success] = "All todos have been completed. Go have a cup of tea!"
   redirect "lists/#{list_id}"
 end
