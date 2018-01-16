@@ -1,11 +1,11 @@
 <ul id="lists">
-  <% sort_lists_by_completed!(@lists).each_with_index do |list, index| %>
+  <% sort_lists_by_completed!(@lists).each do |list| %>
   <% if completed?(list) %>
     <li class="complete">
   <% else %>
     <li>
   <% end %>
-      <a href=<%= "/lists/#{index}" %>>
+      <a href=<%= "/lists/#{list[:id]}" %>>
         <h2><%= list[:name] %></h2>
         <p><%= display_completed_todos(list) %></p>
       </a>

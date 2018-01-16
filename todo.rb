@@ -8,6 +8,10 @@ configure do
   set :session_secret, 'secret'
 end
 
+configure do
+  set :erb, :escape_html => true
+end
+
 helpers do
   def completed?(list)
     total_todos(list) > 0 &&
@@ -76,16 +80,37 @@ def error_for_todo(todo)
   end
 end
 
+def next_id(list)
+  max = list.map { |item| item[:id] }.max || 0
+  max + 1
+end
+
+
+def load_list(id)
+  list = session[:lists].select { |list| list[:id] == id }
+  if list.nil?
+    session[:error] = "That list was not found"
+    redirect "/lists"
+  end
+  list.first
+end
+
+def delete_id_from_array!(array, id)
+  array.reject! { |hash| hash[:id] == id }
+end
+
 
 # Create a new list
 post "/lists" do
   list_name = params[:list_name].strip
   error = error_for_list_name(list_name)
+  list = session[:lists]
   if error
     session[:error] = error
     erb :new_list, layout: :layout
   else
-    session[:lists] << { name: list_name, todos: [] }
+    id = next_id(list)
+    list << { id: id, name: list_name, todos: [] }
     session[:success] = "The list has been created"
     redirect "/lists"
   end
@@ -93,7 +118,8 @@ end
 
 get "/lists/:list_id" do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
+
   @todos = @list[:todos]
 
   erb :list, layout: :layout
@@ -102,7 +128,7 @@ end
 # Edit an existing todo list
 get "/lists/:id/edit" do
   id = params[:id].to_i
-  @list = session[:lists][id]
+  @list = load_list(id)
 
   erb :edit_list, layout: :layout
 end
@@ -111,7 +137,7 @@ end
 post "/lists/:id" do
   list_name = params[:list_name].strip
   @id = params[:id].to_i
-  @list = session[:lists][@id]
+  @list = load_list(@id)
 
   error = error_for_list_name(list_name)
   if error
@@ -127,15 +153,19 @@ end
 # Delete a todo list
 post "/lists/:id/delete" do
   id = params[:id].to_i
-  session[:lists].delete_at(id)
-  session[:success] = "List successfully deleted"
-  redirect "/lists"
+  delete_id_from_array!(session[:lists], id)
+  if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+    "/lists"
+  else
+    session[:success] = "List successfully deleted"
+    redirect "/lists"
+  end
 end
 
 # Add a new todo to a list
 post "/lists/:list_id/todos" do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
   todo = params[:todo].strip
   @todos = @list[:todos]
 
@@ -145,7 +175,8 @@ post "/lists/:list_id/todos" do
     session[:error] = error
     erb :list, layout: :layout
   else
-    @list[:todos] << { name: todo, completed: false }
+    id = next_id(@list[:todos])
+    @list[:todos] << { id: id, name: todo, completed: false }
     session[:success] = "Todo added"
     redirect "/lists/#{@list_id}"
   end
@@ -154,11 +185,16 @@ end
 # Deleteing a todo
 post "/lists/:list_id/todos/:todo_id/delete" do
   list_id = params[:list_id].to_i
-  list = session[:lists][list_id]
+  list = load_list(list_id)
   todo_id = params[:todo_id].to_i
-  list[:todos].delete_at(todo_id)
-  session[:success] = "Todo deleted"
-  redirect "lists/#{list_id}"
+  delete_id_from_array!(list[:todos], todo_id)
+  #list[:todos].delete_at(todo_id)
+  if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+    status 204
+  else
+    session[:success] = "Todo deleted"
+    redirect "lists/#{list_id}"
+  end
 end
 
 # Check off a completed task
@@ -166,17 +202,18 @@ end
 post '/lists/:list_id/todos/:todo_id' do
   list_id = params[:list_id].to_i
   todo_id = params[:todo_id].to_i
-  list = session[:lists][list_id]
+  list = load_list(list_id)
 
   is_completed = params[:complete] == "true"
-  list[:todos][todo_id][:completed] = is_completed
+  todo = list[:todos].find { |todo| todo[:id] == todo_id }
+  todo[:completed] = is_completed
   session[:success] = "Todo status altered"
   redirect "lists/#{list_id}"
 end
 
 post '/lists/:list_id/completed' do
   list_id = params[:list_id].to_i
-  list = session[:lists][list_id]
+  list = load_list(list_id)
     list[:todos].each do |todo|
       todo[:completed] = true
     end

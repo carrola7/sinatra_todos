@@ -19,13 +19,13 @@
       <% else %>
         <li>
       <% end %>
-        <form action="/lists/<%= params[:list_id] || @list_id %>/todos/<%= "#{index}" %>" method="post" class="check">
+        <form action="/lists/<%= params[:list_id] || @list_id %>/todos/<%= todo[:id] %>" method="post" class="check">
           <input type="hidden" name="complete" value="<%= !todo[:completed] %>" />
           <button type="submit">Complete</button>
         </form>
 
         <h3><%= todo[:name]%></h3>
-        <form action="/lists/<%= params[:list_id] || @list_id %>/todos/<%= "#{index}" %>/delete" method="post" class="delete">
+        <form action="/lists/<%= params[:list_id] || @list_id %>/todos/<%= todo[:id] %>/delete" method="post" class="delete">
           <button type="submit">Delete</button>
         </form>
       </li>
